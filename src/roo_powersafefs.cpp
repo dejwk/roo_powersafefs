@@ -42,7 +42,7 @@ Guard::Guard(Device* device)
       forced_write_transaction_count_(0) {}
 
 Guard::Mode Guard::mode() const {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   return mode_;
 }
 
@@ -54,7 +54,7 @@ void Guard::unmountIfPending() {
 }
 
 void Guard::setMode(Guard::Mode mode) {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   if (mode == mode_) return;
   switch (mode_) {
     case FS_EAGER_UNMOUNT: {
@@ -93,7 +93,7 @@ void Guard::setMode(Guard::Mode mode) {
 }
 
 bool Guard::isMounted() const {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   return mounted_;
 }
 
@@ -106,17 +106,17 @@ WriteTransaction Guard::write(bool forced) {
 }
 
 int Guard::getPendingMountsCount() const {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   return mount_count_;
 }
 
 int Guard::getPendingWriteTransactionsCount() const {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   return write_transaction_count_;
 }
 
 bool Guard::tryMount(bool forced) {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   switch (mode_) {
     case FS_DISABLED:
     case FS_SHUTDOWN: {
@@ -140,7 +140,7 @@ bool Guard::tryMount(bool forced) {
 }
 
 void Guard::unmount(bool forced) {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   --mount_count_;
   if (forced) --forced_mount_count_;
   if (mounted_ && mount_count_ == 0 && mode_ != FS_NORMAL) {
@@ -150,7 +150,7 @@ void Guard::unmount(bool forced) {
 }
 
 bool Guard::tryBeginWriteTransaction(bool forced) {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   if (!mounted_) return false;
   switch (mode_) {
     case FS_DISABLED:
@@ -170,7 +170,7 @@ bool Guard::tryBeginWriteTransaction(bool forced) {
 }
 
 void Guard::endWriteTransaction(bool forced) {
-  std::lock_guard<std::mutex> guard(mutex_);
+  roo::lock_guard<roo::mutex> guard(mutex_);
   --write_transaction_count_;
   if (forced) --forced_write_transaction_count_;
 }

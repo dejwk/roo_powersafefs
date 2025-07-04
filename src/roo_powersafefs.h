@@ -1,7 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
+
+#include "roo_threads/mutex.h"
 
 namespace roo_powersafefs {
 
@@ -130,7 +131,7 @@ class Guard {
   void unmountIfPending();
   
   Device* device_;
-  mutable std::mutex mutex_;
+  mutable roo::mutex mutex_;
 
   Mode mode_;
   bool mounted_;
