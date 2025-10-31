@@ -8,5 +8,5 @@ cc_library(
         "src",
     ],
     visibility = ["//visibility:public"],
-    deps = ["//lib/roo_threads"]
+    deps = ["@roo_threads"]
 )
