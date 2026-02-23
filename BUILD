@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 cc_library(
     name = "roo_powersafefs",
     srcs = [
@@ -8,5 +10,5 @@ cc_library(
         "src",
     ],
     visibility = ["//visibility:public"],
-    deps = ["@roo_threads"]
+    deps = ["@roo_threads"],
 )
