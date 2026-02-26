@@ -6,32 +6,43 @@
 
 namespace roo_powersafefs {
 
+/// Filesystem backend that can be mounted and unmounted on demand.
 class Device {
  public:
   virtual ~Device() {}
+  /// Mounts the underlying filesystem.
+  ///
+  /// @return true if the filesystem is mounted and ready for use.
   virtual bool mount() = 0;
+  /// Unmounts the underlying filesystem.
   virtual void unmount() = 0;
 };
 
 class Guard;
 
-// Created in order to request that the filesystem is mounted. The filesystem
-// will remain mounted for as long as this object is alive. If the guard
-// has been configured for delayed unmount, the filesystem may remain =
-// mounted after the object is destroyed.
-// If you need write access to the filesystem, also use WriteTransaction
-// (see below).
-// Typical usage scenario:
-//
-// Mount mount(&guard);
-// if (mount.mounted()) {
-//   // Perform reads on the filesystem.
-// }
+/// RAII handle that requests the filesystem to stay mounted.
+///
+/// The filesystem remains mounted while this object is alive. Depending on
+/// guard mode and `forced`, it may remain mounted after destruction.
+///
+/// Typical usage:
+///
+/// @code
+/// Mount mount(&guard);
+/// if (mount.mounted()) {
+///   // Perform reads on the filesystem.
+/// }
+/// @endcode
 class Mount {
  public:
+  /// Attempts to mount using guard policy.
+  ///
+  /// @param guard Guard controlling mount policy.
+  /// @param forced If true, bypasses restrictive modes when allowed.
   Mount(Guard* guard, bool forced = false);
   Mount(Mount&& other);
 
+  /// Returns true if the mount request succeeded.
   bool mounted() const { return mounted_; }
 
   ~Mount();
@@ -47,21 +58,21 @@ class Mount {
   bool mounted_;
 };
 
-// Created in order to signal intent to perform a write operation on the
-// file system. The typical usage scenario:
-//
-// Mount mount(&guard);
-// if (mount.mounted()) {
-//   WriteTransaction write(&guard);
-//   if (write.active()) { ... }
-// }
+/// RAII handle that marks an active filesystem write transaction.
+///
+/// Use this in combination with `Mount` when writes are needed.
 class WriteTransaction {
  public:
+  /// Attempts to begin a write transaction.
+  ///
+  /// @param guard Guard controlling write policy.
+  /// @param forced If true, bypasses restrictive modes when allowed.
   WriteTransaction(Guard* guard, bool forced = false);
   WriteTransaction(WriteTransaction&& other);
 
   ~WriteTransaction();
 
+  /// Returns true if the write transaction is active.
   bool active() const { return active_; }
 
  private:
@@ -73,49 +84,52 @@ class WriteTransaction {
   bool active_;
 };
 
+/// Coordinates filesystem mount and write access policy.
 class Guard {
  public:
+  /// Filesystem operating mode.
   enum Mode {
-    // All mount and write transaction operations are granted.
-    // The filesystem gets mounted when requested. Once mounted, the
-    // filesystem remains mounted indefinitely.
+    /// All mount and write requests are granted.
+    ///
+    /// Filesystem remains mounted indefinitely once mounted.
     FS_NORMAL,
 
-    // Like FS_NORMAL, except that the filesystem gets
-    // unmounted as soon as all mount objects are destroyed.
+    /// Like `FS_NORMAL`, but unmounts when the last `Mount` is destroyed.
     FS_EAGER_UNMOUNT,
 
-    // New mount and write transaction requests are rejected,
-    // unless they are called with the 'force' mode. The filesystem gets
-    // unmounted as soon as all mount objects are destroyed.
+    /// Rejects non-forced requests and unmounts when no mounts remain.
     FS_LAME_DUCK,
 
-    // New mount and write transaction requests are rejected,
-    // even if they are called with the 'force' mode. The filesystem gets
-    // unmounted as soon as all mount objects are destroyed.
+    /// Rejects all new requests and unmounts when no mounts remain.
     FS_SHUTDOWN,
 
-    // The filesystem gets immediately unmounted, even if it is in use.
+    /// Immediately unmounts, even if currently in use.
     FS_DISABLED
   };
 
+  /// Creates a guard for the specified filesystem device.
   Guard(Device* device);
 
+  /// Returns the current guard mode.
   Mode mode() const;
+  /// Changes guard mode.
   void setMode(Mode);
 
+  /// Requests a mounted handle.
   Mount mount(bool force = false);
+  /// Requests an active write transaction.
   WriteTransaction write(bool force = false);
 
-  // Returns true if the underlying device is mounted; false otherwise.
-  // In FS_DISABLED mode, will always return true. In FS_NORMAL, may return
-  // true even if getPendingMountsCount() is zero.
+  /// Returns true if the underlying device is mounted.
+  ///
+  /// In `FS_DISABLED` mode this returns true. In `FS_NORMAL`, this can return
+  /// true even when `getPendingMountsCount()` is zero.
   bool isMounted() const;
 
-  // Returns the number of Mount objects for this guard object.
+  /// Returns the number of active `Mount` handles.
   int getPendingMountsCount() const;
 
-  // Returns the number of write transactions for this guard object.
+  /// Returns the number of active write transactions.
   int getPendingWriteTransactionsCount() const;
 
  private:
@@ -129,7 +143,7 @@ class Guard {
   void endWriteTransaction(bool forced);
 
   void unmountIfPending();
-  
+
   Device* device_;
   mutable roo::mutex mutex_;
 
