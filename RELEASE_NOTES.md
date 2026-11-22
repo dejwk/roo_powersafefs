@@ -1,3 +1,10 @@
+# roo_powersafefs 1.1.1
+
+- Fix Arduino dependency discovery by including `roo_threads.h` directly from `roo_powersafefs.h`.
+- Upgrade the Bazel dependencies `roo_threads` from 1.3.1 to 1.4.0 and `roo_testing` from 2.6.0 to 2.7.0. Update the shared CI workflow to use `roo_testing` 2.7.0 as well.
+
+---
+
 # roo_powersafefs 1.1.0
 
 - Upgrade the Bazel dependencies `roo_threads` from 1.2.9 to 1.3.1 and `roo_testing` from 2.3.0 to 2.6.0. Update shared CI to `roo_testing` 2.6.0 and switch it to the `arduino_esp32` profile.
