@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "roo_threads.h"
 #include "roo_threads/mutex.h"
 
 namespace roo_powersafefs {
